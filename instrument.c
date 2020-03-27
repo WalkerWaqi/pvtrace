@@ -10,45 +10,82 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#define CODE_PATH "ttt"
+#define CODE_PERMISSIONS "r-xp"
 
 /* Function prototypes with attributes */
-void main_constructor( void )
-	__attribute__ ((no_instrument_function, constructor));
+void main_constructor(void)
+    __attribute__((no_instrument_function, constructor));
 
-void main_destructor( void )
-	__attribute__ ((no_instrument_function, destructor));
+void main_destructor(void)
+    __attribute__((no_instrument_function, destructor));
 
-void __cyg_profile_func_enter( void *, void * ) 
-	__attribute__ ((no_instrument_function));
+void __cyg_profile_func_enter(void *, void *)
+    __attribute__((no_instrument_function));
 
-void __cyg_profile_func_exit( void *, void * )
-	__attribute__ ((no_instrument_function));
-
+void __cyg_profile_func_exit(void *, void *)
+    __attribute__((no_instrument_function));
 
 static FILE *fp;
+static void *segment_start = 0;
 
-
-void main_constructor( void )
+#define N 255
+void __attribute__((no_instrument_function))
+get_segment_start()
 {
-  fp = fopen( "trace.txt", "w" );
-  if (fp == NULL) exit(-1);
+  FILE *fp;
+  char str[N + 1];
+
+  if ((fp = fopen("/proc/self/maps", "rt")) == NULL)
+    exit(-1);
+
+  while (fgets(str, N, fp) != NULL)
+  {
+    if (strstr(str, CODE_PERMISSIONS) && strstr(str, CODE_PATH))
+    {
+      // printf("%s", str);
+
+      char *end = strstr(str, "-");
+      if (end)
+      {
+        *end = '\0';
+
+        sscanf(str, "%llx", &segment_start);
+
+        // printf("%p", segment_start);
+
+        break;
+      }
+    }
+  }
+
+  fclose(fp);
 }
 
-
-void main_deconstructor( void )
+void main_constructor(void)
 {
-  fclose( fp );
+  fp = fopen("trace.txt", "w");
+  if (fp == NULL)
+    exit(-1);
+
+  get_segment_start();
 }
 
-
-void __cyg_profile_func_enter( void *this, void *callsite )
+void main_deconstructor(void)
 {
-  fprintf(fp, "E%p\n", (int *)this);
+  fclose(fp);
 }
 
-
-void __cyg_profile_func_exit( void *this, void *callsite )
+void __cyg_profile_func_enter(void *this, void *callsite)
 {
-  fprintf(fp, "X%p\n", (int *)this);
+  if (fp)
+    fprintf(fp, "E%p\n", (int *)(this - segment_start));
 }
 
+void __cyg_profile_func_exit(void *this, void *callsite)
+{
+  if (fp)
+    fprintf(fp, "X%p\n", (int *)(this - segment_start));
+}
