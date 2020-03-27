@@ -71,7 +71,8 @@ int translateFunctionFromSymbol( unsigned int address, char *func )
   char line[100];
   int  len, i;
 
-  sprintf( line, "addr2line -e %s -f -s 0x%x", imageName, address );
+  // sprintf( line, "addr2line -e %s -f -s 0x%x", imageName, address );
+  sprintf( line, "addr2line -e %s -f -s 0x%x | c++filt | awk -F'(' '{print $1}'", imageName, address );
 
   p = popen( line, "r" );
 
