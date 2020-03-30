@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #define CODE_PATH         "ttt"
 #define CODE_PERMISSIONS  "r-xp"
@@ -84,7 +85,8 @@ void __cyg_profile_func_enter(void *this, void *callsite)
   if (fp)
   {
     // fprintf(fp, "E%p\n", (int *)(this - segment_start));
-    fprintf(fp, "Enter\n%p\n%p\n", (int *)(callsite - segment_start), (int *)(this - segment_start));
+    int thread_id = pthread_self();
+    fprintf(fp, "%u Enter\n%u %p\n%u %p\n", thread_id, thread_id, (int *)(callsite - segment_start), thread_id, (int *)(this - segment_start));
   }
 }
 
@@ -93,6 +95,7 @@ void __cyg_profile_func_exit(void *this, void *callsite)
   if (fp)
   {
     // fprintf(fp, "X%p\n", (int *)(this - segment_start));
-    fprintf(fp, "Exit\n%p\n%p\n", (int *)(callsite - segment_start), (int *)(this - segment_start));
+    int thread_id = pthread_self();
+    fprintf(fp, "%u Exit\n%u %p\n%u %p\n", thread_id, thread_id, (int *)(callsite - segment_start), thread_id, (int *)(this - segment_start));
   }
 }
