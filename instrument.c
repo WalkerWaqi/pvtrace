@@ -12,8 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CODE_PATH "ttt"
-#define CODE_PERMISSIONS "r-xp"
+#define CODE_PATH         "ttt"
+#define CODE_PERMISSIONS  "r-xp"
+#define TRACE_FILE        "trace.txt"
 
 /* Function prototypes with attributes */
 void main_constructor(void)
@@ -43,10 +44,10 @@ get_segment_start()
 
   while (fgets(str, N, fp) != NULL)
   {
+    // printf("%s", str);
+
     if (strstr(str, CODE_PERMISSIONS) && strstr(str, CODE_PATH))
     {
-      // printf("%s", str);
-
       char *end = strstr(str, "-");
       if (end)
       {
@@ -66,7 +67,7 @@ get_segment_start()
 
 void main_constructor(void)
 {
-  fp = fopen("trace.txt", "w");
+  fp = fopen(TRACE_FILE, "w");
   if (fp == NULL)
     exit(-1);
 
@@ -81,11 +82,17 @@ void main_deconstructor(void)
 void __cyg_profile_func_enter(void *this, void *callsite)
 {
   if (fp)
-    fprintf(fp, "E%p\n", (int *)(this - segment_start));
+  {
+    // fprintf(fp, "E%p\n", (int *)(this - segment_start));
+    fprintf(fp, "Enter\n%p\n%p\n", (int *)(callsite - segment_start), (int *)(this - segment_start));
+  }
 }
 
 void __cyg_profile_func_exit(void *this, void *callsite)
 {
   if (fp)
-    fprintf(fp, "X%p\n", (int *)(this - segment_start));
+  {
+    // fprintf(fp, "X%p\n", (int *)(this - segment_start));
+    fprintf(fp, "Exit\n%p\n%p\n", (int *)(callsite - segment_start), (int *)(this - segment_start));
+  }
 }
